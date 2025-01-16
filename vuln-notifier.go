@@ -24,11 +24,19 @@ func main() {
 	flag.Parse()
 
 	keywordList := strings.Split(*keywords, ",")
+	sendInitMessage(interval, slackWebhook, dingtalkWebhook)
 
 	for {
 		monitor(keywordList, *slackWebhook, *dingtalkWebhook)
 		time.Sleep(time.Duration(*interval) * time.Minute)
 	}
+}
+
+func sendInitMessage(interval *int, slackWebhook *string, dingtalkWebhook *string) {
+	logMessage := fmt.Sprintf("vuln-notifier initialized successfully. Polling every %d minutes.", *interval)
+	today := time.Now().UTC()
+	currentUrl := fmt.Sprintf("%s%d/%02d/%02d/", baseURL, today.Year(), int(today.Month()), today.Day())
+	send(logMessage, currentUrl, *slackWebhook, *dingtalkWebhook)
 }
 
 func monitor(keywords []string, slackWebhook string, dingtalkWebhook string) {
