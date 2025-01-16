@@ -19,29 +19,22 @@ const (
 func main() {
 	keywords := flag.String("keywords", "", "Comma-separated list of keywords to filter messages")
 	slackWebhook := flag.String("slack-webhook", "", "Slack webhook URL for notifications")
-	interval := flag.Int("interval", 30, "Polling interval in minutes")
+	dingtalkWebhook := flag.String("dingtalk-webhook", "", "DingTalk webhook URL for notifications")
+	interval := flag.Int("interval", 60, "Polling interval in minutes")
 	flag.Parse()
-
-	if *slackWebhook == "" {
-		fmt.Println("Slack webhook URL is required. Provide it using the --slack-webhook flag.")
-		os.Exit(1)
-	}
-
-	if *keywords == "" {
-		fmt.Println("Keywords are required. Provide them using the --keywords flag.")
-		os.Exit(1)
-	}
 
 	keywordList := strings.Split(*keywords, ",")
 
 	for {
-		monitor(keywordList, *slackWebhook)
+		monitor(keywordList, *slackWebhook, *dingtalkWebhook)
 		time.Sleep(time.Duration(*interval) * time.Minute)
 	}
 }
 
-func monitor(keywords []string, slackWebhook string) {
-	url := generateURL()
+func monitor(keywords []string, slackWebhook string, dingtalkWebhook string) {
+	today := time.Now().UTC()
+	url := fmt.Sprintf("%s%d/%02d/%02d/", baseURL, today.Year(), int(today.Month()), today.Day())
+
 	items, err := fetch(url)
 	if err != nil {
 		fmt.Printf("Failed to fetch and parse content: %v\n", err)
@@ -49,23 +42,30 @@ func monitor(keywords []string, slackWebhook string) {
 	}
 
 	visitedVuln := loadVisitedVuln()
+	fileName := generateFileName()
 
 	for _, item := range items {
 		href := item[0]
-		title := item[1]
+		title := strings.ReplaceAll(item[1], "\n", " ")
+		detailUrl := fmt.Sprintf("%s%s", url, href)
+
+		if strings.HasPrefix(title, "Re:") {
+			continue
+		}
 
 		if _, exists := visitedVuln[title]; exists {
 			continue
 		}
-
-		for _, keyword := range keywords {
-			if strings.Contains(strings.ToLower(title), strings.ToLower(strings.TrimSpace(keyword))) {
-				message := fmt.Sprintf("Keyword '%s' matched!\nTitle: %s\nURL: %s%s", keyword, title, url, href)
-				if err := sendToSlack(slackWebhook, message); err != nil {
-					fmt.Printf("Failed to send message to Slack: %v\n", err)
+		if len(keywords) == 0 {
+			send(title, detailUrl, slackWebhook, dingtalkWebhook)
+			appendToFile(fileName, title, detailUrl)
+		} else {
+			for _, keyword := range keywords {
+				if strings.Contains(strings.ToLower(title), strings.ToLower(strings.TrimSpace(keyword))) {
+					send(title, detailUrl, slackWebhook, dingtalkWebhook)
+					appendToFile(fileName, title, detailUrl)
+					break
 				}
-				appendToFile(generateFileName(), title) // 保存匹配到的条目到文件
-				break
 			}
 		}
 
@@ -73,7 +73,18 @@ func monitor(keywords []string, slackWebhook string) {
 	}
 }
 
-func appendToFile(fileName, content string) {
+func send(title string, url string, slackWebhook string, dingtalkWebhook string) {
+	if slackWebhook != "" {
+		message := fmt.Sprintf("%s(%s)", title, url)
+		sendToSlack(slackWebhook, message)
+	}
+	if dingtalkWebhook != "" {
+		message := fmt.Sprintf("%s %s", title, url)
+		sendToDingTalk(dingtalkWebhook, message)
+	}
+}
+
+func appendToFile(fileName, content string, url string) {
 	file, err := os.OpenFile(fileName, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		fmt.Printf("Failed to open file for appending: %v\n", err)
@@ -81,7 +92,7 @@ func appendToFile(fileName, content string) {
 	}
 	defer file.Close()
 
-	if _, err := file.WriteString(content + "\n"); err != nil {
+	if _, err := file.WriteString(content + "\n" + url + "\n\n"); err != nil {
 		fmt.Printf("Failed to append to file: %v\n", err)
 	}
 }
@@ -92,7 +103,7 @@ func fetch(url string) ([][]string, error) {
 		return nil, fmt.Errorf("failed to fetch content: %w", err)
 	}
 
-	items, err := extractItems(content)
+	items, err := parseItems(content)
 	if err != nil {
 		return nil, fmt.Errorf("failed to extract items: %w", err)
 	}
@@ -123,7 +134,7 @@ func fetchContent(url string) (string, error) {
 	return string(body), nil
 }
 
-func extractItems(content string) ([][]string, error) {
+func parseItems(content string) ([][]string, error) {
 	doc, err := htmlquery.Parse(strings.NewReader(content))
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse HTML: %w", err)
@@ -140,20 +151,33 @@ func extractItems(content string) ([][]string, error) {
 	return items, nil
 }
 
-func sendToSlack(webhookURL, message string) error {
+func sendToSlack(webhookURL, message string) {
 	payload := fmt.Sprintf(`{"text": "%s"}`, strings.ReplaceAll(message, "\"", "\\\""))
 	resp, err := http.Post(webhookURL, "application/json", strings.NewReader(payload))
 	if err != nil {
-		return fmt.Errorf("error posting to Slack: %w", err)
+		fmt.Errorf("error posting to Slack: %w", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
 		body, _ := ioutil.ReadAll(resp.Body)
-		return fmt.Errorf("unexpected status code: %d, response: %s", resp.StatusCode, body)
+		fmt.Errorf("unexpected status code: %d, response: %s", resp.StatusCode, body)
 	}
 
-	return nil
+}
+
+func sendToDingTalk(webhookURL, message string) {
+	payload := fmt.Sprintf(`{"msgtype": "text", "text": {"content": "%s"}}`, message)
+	resp, err := http.Post(webhookURL, "application/json", strings.NewReader(payload))
+	if err != nil {
+		fmt.Errorf("error posting to DingTalk: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := ioutil.ReadAll(resp.Body)
+		fmt.Errorf("unexpected status code: %d, response: %s", resp.StatusCode, body)
+	}
 }
 
 func loadVisitedVuln() map[string]bool {
@@ -176,25 +200,6 @@ func loadVisitedVuln() map[string]bool {
 	}
 
 	return visitedVuln
-}
-
-func saveVisitedVuln(visitedVuln map[string]bool) {
-	fileName := generateFileName()
-	var titles []string
-	for title := range visitedVuln {
-		titles = append(titles, title)
-	}
-
-	data := strings.Join(titles, "\n")
-	err := ioutil.WriteFile(fileName, []byte(data), 0644)
-	if err != nil {
-		fmt.Printf("Failed to save visited vulnerabilities: %v\n", err)
-	}
-}
-
-func generateURL() string {
-	today := time.Now().UTC()
-	return fmt.Sprintf("%s%d/%02d/%02d/", baseURL, today.Year(), int(today.Month()), today.Day())
 }
 
 func generateFileName() string {
