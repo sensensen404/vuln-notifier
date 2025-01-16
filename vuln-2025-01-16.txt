@@ -1,0 +1,2 @@
+[kubernetes] CVE-2024-9042: Command Injection affecting Windows nodes
+ via nodes/*/logs/query API
