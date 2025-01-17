@@ -1,6 +1,6 @@
 # vuln-notifier
 
-### 切换到 [English Version](https://github.com/sensensen404/vuln-notifier/blob/main/README.md)
+#### 切换到 [English Version](https://github.com/sensensen404/vuln-notifier/blob/main/README.md)
 
 一个简单的 Go 命令行工具，用于监控 Openwall 安全邮件列表，并将新的漏洞帖子通知到 Slack 和 DingTalk。该工具支持关键词过滤，确保只接收相关的安全通知。
 
@@ -51,3 +51,7 @@
 ./vuln-notifier -keywords="apache" -slack-webhook="https://hooks.slack.com/services/..." -dingtalk-webhook="https://oapi.dingtalk.com/..." -interval=30
 ```
 这将仅发送与 Apache 相关的漏洞通知，过滤掉与其无关的帖子。
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](https://github.com/sensensen404/vuln-notifier/blob/main/LICENSE) file for details. 

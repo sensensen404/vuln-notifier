@@ -53,4 +53,4 @@ This will send notifications for vulnerabilities related to Apache only, filteri
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details. 
+This project is licensed under the MIT License - see the [LICENSE](https://github.com/sensensen404/vuln-notifier/blob/main/LICENSE) file for details. 
