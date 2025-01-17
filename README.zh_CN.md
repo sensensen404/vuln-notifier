@@ -1,6 +1,6 @@
 # vuln-notifier
 
-### 切换到 [English Version](#vuln-notifier)
+### 切换到 [English Version](https://github.com/sensensen404/vuln-notifier/blob/main/README.md)
 
 一个简单的 Go 命令行工具，用于监控 Openwall 安全邮件列表，并将新的漏洞帖子通知到 Slack 和 DingTalk。该工具支持关键词过滤，确保只接收相关的安全通知。
 
