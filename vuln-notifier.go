@@ -21,12 +21,18 @@ func main() {
 	slackWebhook := flag.String("slack-webhook", "", "Slack webhook URL for notifications")
 	dingtalkWebhook := flag.String("dingtalk-webhook", "", "DingTalk webhook URL for notifications")
 	interval := flag.Int("interval", 60, "Polling interval in minutes")
+
+	flag.Usage = func() {
+		fmt.Fprintf(os.Stderr, "Usage of %s:\n", os.Args[0])
+		flag.PrintDefaults()
+	}
 	flag.Parse()
 
 	keywordList := strings.Split(*keywords, ",")
 	sendInitMessage(interval, slackWebhook, dingtalkWebhook)
 
 	for {
+		logWithTime("Querying data...")
 		monitor(keywordList, *slackWebhook, *dingtalkWebhook)
 		time.Sleep(time.Duration(*interval) * time.Minute)
 	}
@@ -49,6 +55,11 @@ func monitor(keywords []string, slackWebhook string, dingtalkWebhook string) {
 		return
 	}
 
+	if len(items) == 0 {
+		logWithTime("No items found for the current time.")
+		return
+	}
+
 	visitedVuln := loadVisitedVuln()
 	fileName := generateFileName()
 
@@ -64,6 +75,9 @@ func monitor(keywords []string, slackWebhook string, dingtalkWebhook string) {
 		if _, exists := visitedVuln[title]; exists {
 			continue
 		}
+
+		logWithTime("New message found: " + title + " " + detailUrl)
+
 		if len(keywords) == 0 {
 			send(title, detailUrl, slackWebhook, dingtalkWebhook)
 			appendToFile(fileName, title, detailUrl)
@@ -213,4 +227,8 @@ func loadVisitedVuln() map[string]bool {
 func generateFileName() string {
 	today := time.Now().UTC()
 	return fmt.Sprintf("vuln-%d-%02d-%02d.txt", today.Year(), int(today.Month()), today.Day())
+}
+
+func logWithTime(message string) {
+	fmt.Printf("[%s] %s\n", time.Now().UTC().Format("2006-01-02 15:04:05"), message)
 }
