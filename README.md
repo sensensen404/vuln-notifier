@@ -2,10 +2,10 @@
 
 #### Switch to [中文版](https://github.com/sensensen404/vuln-notifier/blob/main/README.zh_CN.md)
 
-A simple Go command-line tool that monitors the Openwall security mailing list and sends notifications for new vulnerability posts to Slack and DingTalk. The tool supports keyword filtering to receive only the relevant security notifications.
+A simple Go command-line tool that monitors the Openwall oss-security mailing list and sends notifications for new vulnerability posts to Slack or DingTalk. The tool supports keyword filtering to receive only the relevant security notifications.
 
 ## Features
-- Periodic polling of Openwall security mailing list.
+- Periodic polling of Openwall oss-security mailing list.
 - Send notifications to Slack and DingTalk.
 - Filter messages by keywords.
 - Keep track of visited vulnerabilities to avoid redundant notifications.

@@ -2,10 +2,10 @@
 
 #### 切换到 [English Version](https://github.com/sensensen404/vuln-notifier/blob/main/README.md)
 
-一个简单的 Go 命令行工具，用于监控 Openwall 安全邮件列表，并将新的漏洞帖子通知到 Slack 和 DingTalk。该工具支持关键词过滤，确保只接收相关的安全通知。
+一个简单的 Go 命令行工具，用于监控 Openwall 安全邮件列表，并将新的漏洞帖子通知到 Slack 或者 DingTalk。该工具支持关键词过滤，确保只接收相关的安全通知。
 
 ## 特性
-- 定期轮询 Openwall 安全邮件列表。
+- 定期轮询 Openwall oss-security 邮件列表。
 - 将通知发送到 Slack 和 DingTalk。
 - 根据关键词过滤消息。
 - 可配置轮询间隔（以分钟为单位）。
