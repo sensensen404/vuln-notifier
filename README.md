@@ -50,7 +50,3 @@ To filter vulnerability posts related to **Apache** and send notifications every
 ./vuln-notifier -keywords="apache" -slack-webhook="https://hooks.slack.com/services/..." -dingtalk-webhook="https://oapi.dingtalk.com/..." -interval=30
 ```
 This will send notifications for vulnerabilities related to Apache only, filtering out posts unrelated to it.
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
