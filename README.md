@@ -5,7 +5,7 @@
 A simple Go command-line tool that monitors the Openwall oss-security mailing list and sends notifications for new vulnerability posts to Slack or DingTalk. The tool supports keyword filtering to receive only the relevant security notifications.
 
 ## Features
-- Periodic polling of Openwall oss-security mailing list.
+- Periodic polling of Openwall [oss-security mailing list](https://www.openwall.com/lists/oss-security/).
 - Send notifications to Slack and DingTalk.
 - Filter messages by keywords.
 - Keep track of visited vulnerabilities to avoid redundant notifications.
