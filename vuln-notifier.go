@@ -102,7 +102,8 @@ func send(title string, url string, slackWebhook string, dingtalkWebhook string)
 	}
 	if dingtalkWebhook != "" {
 		message := fmt.Sprintf("%s %s", title, url)
-		sendToDingTalk(dingtalkWebhook, message)
+		escapedMessage := escapeMessage(message)
+		sendToDingTalk(dingtalkWebhook, escapedMessage)
 	}
 }
 
@@ -231,4 +232,8 @@ func generateFileName() string {
 
 func logWithTime(message string) {
 	fmt.Printf("[%s] %s\n", time.Now().UTC().Format("2006-01-02 15:04:05"), message)
+}
+
+func escapeMessage(message string) string {
+	return strings.ReplaceAll(message, `"`, `\"`)
 }
